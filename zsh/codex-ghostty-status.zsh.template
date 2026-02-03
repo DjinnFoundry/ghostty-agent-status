@@ -1,0 +1,22 @@
+# >>> codex-ghostty-status >>>
+# Codex wrapper: updates Ghostty tab/header title with status emoji.
+codex() {
+  if [[ ! -t 0 || ! -t 1 ]]; then
+    command codex "$@"
+    return $?
+  fi
+
+  local project
+  project="${PWD:t}"
+  [[ -z "$project" ]] && project="/"
+
+  if ! command -v python3 >/dev/null 2>&1 || [[ ! -f "__PROXY_PATH__" ]]; then
+    print -rn -- "\e]2;${project} - codex - 🟡 working\a"
+    command codex "$@"
+    return $?
+  fi
+
+  python3 "__PROXY_PATH__" "$project" "$@"
+  return $?
+}
+# <<< codex-ghostty-status <<<

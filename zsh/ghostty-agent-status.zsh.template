@@ -1,4 +1,4 @@
-# >>> codex-ghostty-status >>>
+# >>> ghostty-agent-status >>>
 # Multi-agent wrappers: codex, claude-code (claude), and opencode.
 _cgs_wrap_agent() {
   local agent_cmd="$1"
@@ -52,4 +52,4 @@ opencode() {
   _cgs_wrap_agent "opencode" "$@"
   return $?
 }
-# <<< codex-ghostty-status <<<
+# <<< ghostty-agent-status <<<

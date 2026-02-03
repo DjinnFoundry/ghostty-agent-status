@@ -1,4 +1,4 @@
-# codex-ghostty-status
+# ghostty-agent-status
 
 Tiny `zsh` wrappers for AI coding CLIs that update your Ghostty tab/header title with project + status.
 
@@ -33,8 +33,8 @@ When you have many Ghostty tabs, seeing only the command name is low-context. Th
 ## Install (easy)
 
 ```bash
-git clone https://github.com/djinn/codex-ghostty-status.git
-cd codex-ghostty-status
+git clone https://github.com/djinn/ghostty-agent-status.git
+cd ghostty-agent-status
 ./scripts/install.sh
 source ~/.zshrc
 ```
@@ -46,7 +46,7 @@ Open a new Ghostty tab/window (or run `source ~/.zshrc`) and run any supported a
 If you want to publish this repo to an org/user (default: `djinn`):
 
 ```bash
-./scripts/publish.sh djinn codex-ghostty-status public
+./scripts/publish.sh djinn ghostty-agent-status public
 ```
 
 Prereqs:
@@ -57,7 +57,7 @@ Prereqs:
 ## Uninstall
 
 ```bash
-cd codex-ghostty-status
+cd ghostty-agent-status
 ./scripts/uninstall.sh
 ```
 
@@ -78,7 +78,7 @@ cd codex-ghostty-status
 After this repo is public, you can also do:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/djinn/codex-ghostty-status/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/djinn/ghostty-agent-status/main/scripts/install.sh | bash
 ```
 
 ## License

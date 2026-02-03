@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ORG="${1:-djinn}"
-REPO_NAME="${2:-codex-ghostty-status}"
+REPO_NAME="${2:-ghostty-agent-status}"
 VISIBILITY="${3:-public}" # public|private
 
 if ! command -v gh >/dev/null 2>&1; then

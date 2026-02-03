@@ -43,6 +43,11 @@ claude() {
   return $?
 }
 
+claude-code() {
+  _cgs_wrap_agent "claude-code" "$@"
+  return $?
+}
+
 opencode() {
   _cgs_wrap_agent "opencode" "$@"
   return $?

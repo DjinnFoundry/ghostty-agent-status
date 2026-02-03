@@ -9,7 +9,7 @@ Title format:
 Supported agents:
 
 - `codex`
-- `claude` (shown as `claude-code` in title)
+- `claude` / `claude-code` (shown as `claude-code` in title)
 - `opencode`
 
 Status states:
@@ -64,7 +64,7 @@ cd codex-ghostty-status
 ## How it works
 
 - Installs a proxy script at `~/.local/bin/agent-ghostty-title-proxy`
-- Injects wrappers for `codex`, `claude`, and `opencode` into `~/.zshrc`
+- Injects wrappers for `codex`, `claude`, `claude-code`, and `opencode` into `~/.zshrc`
 - Runs the selected agent inside a PTY and emits OSC title updates (`OSC 2`) for Ghostty
 
 ## Notes

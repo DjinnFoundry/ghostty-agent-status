@@ -70,7 +70,7 @@ cd codex-ghostty-status
 ## Notes
 
 - `🔴 approval` is heuristic-based (best effort from terminal output patterns).
-- If `python3` is not available, the wrapper falls back to normal `codex` execution.
+- If `python3` is not available, wrappers fall back to normal command execution.
 - Existing snippet is updated in place if you run install multiple times.
 
 ## Manual install (no git)

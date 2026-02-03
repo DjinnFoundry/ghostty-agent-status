@@ -35,6 +35,19 @@ source ~/.zshrc
 
 Open a new Ghostty tab/window (or run `source ~/.zshrc`) and run `codex`.
 
+## Publish to GitHub (maintainer)
+
+If you want to publish this repo to an org/user (default: `djinn`):
+
+```bash
+./scripts/publish.sh djinn codex-ghostty-status public
+```
+
+Prereqs:
+
+- `gh auth login -h github.com` already done
+- permission to create repos in the target org
+
 ## Uninstall
 
 ```bash

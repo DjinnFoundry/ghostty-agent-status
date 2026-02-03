@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run codex in a PTY and update Ghostty title with status emojis."""
+"""Run an AI CLI in a PTY and update Ghostty title with status emojis."""
 
 from __future__ import annotations
 
@@ -20,29 +20,79 @@ STATE_LABELS = {
     "approval": "\U0001F534 approval",    # red
 }
 
-APPROVAL_HINTS = (
-    "allow codex to",
+COMMON_APPROVAL_HINTS = (
     "approval",
     "approve",
-    "apply proposed code changes",
-    "enable full access",
-    "allow writes under this root",
-    "yes, continue anyway",
-    "go back without enabling full access",
-    "acceptforsession",
-    "decline",
+    "confirm",
 )
 
-INTERACTION_HINTS = (" yes", " no", "continue", "decline", "approval", "confirm")
+AGENT_APPROVAL_HINTS = {
+    "codex": (
+        "allow codex to",
+        "apply proposed code changes",
+        "enable full access",
+        "allow writes under this root",
+        "yes, continue anyway",
+        "go back without enabling full access",
+        "acceptforsession",
+    ),
+    "claude": (
+        "permission mode",
+        "bypass permissions",
+        "allow dangerously skip permissions",
+        "allow this action",
+        "allow this command",
+        "trust this directory",
+    ),
+    "claude-code": (
+        "permission mode",
+        "bypass permissions",
+        "allow dangerously skip permissions",
+        "allow this action",
+        "allow this command",
+        "trust this directory",
+    ),
+    "opencode": (
+        "permission denied",
+        "continue anyway",
+        "security warnings found",
+        "cannot prompt for confirmation",
+    ),
+}
+
+INTERACTION_HINTS = (
+    " yes",
+    " no",
+    "y/n",
+    "[y/n]",
+    "[y/n]",
+    "allow once",
+    "allow always",
+    "accept",
+    "reject",
+    "deny",
+    "decline",
+    "continue",
+    "confirm",
+)
 
 CSI_RE = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]")
 OSC_RE = re.compile(r"\x1b\][^\x07]*(?:\x07|\x1b\\)")
 CTRL_RE = re.compile(r"[\x00-\x08\x0b-\x1f\x7f]+")
 
 
-def set_title(project: str, state: str) -> None:
+def title_agent_name(cmd: str) -> str:
+    base = os.path.basename(cmd)
+    if base in ("claude", "claude-code"):
+        return "claude-code"
+    if base in ("codex", "opencode"):
+        return base
+    return base or "agent"
+
+
+def set_title(project: str, agent_name: str, state: str) -> None:
     label = STATE_LABELS.get(state, STATE_LABELS["waiting"])
-    title = f"{project} - codex - {label}"
+    title = f"{project} - {agent_name} - {label}"
     sys.stdout.write(f"\033]2;{title}\a")
     sys.stdout.flush()
 
@@ -76,8 +126,20 @@ def main() -> int:
         os.execvp("codex", ["codex"])
 
     project = CTRL_RE.sub("", sys.argv[1]) or "/"
-    codex_args = sys.argv[2:]
-    cmd = ["codex", *codex_args]
+
+    # New mode: <project> <command> [args...]
+    # Backward-compatible mode: <project> [codex args...]
+    if len(sys.argv) >= 3 and not sys.argv[2].startswith("-"):
+        command = sys.argv[2]
+        command_args = sys.argv[3:]
+    else:
+        command = "codex"
+        command_args = sys.argv[2:]
+
+    agent_name = title_agent_name(command)
+    command_base = os.path.basename(command)
+    approval_hints = COMMON_APPROVAL_HINTS + AGENT_APPROVAL_HINTS.get(command_base, ())
+    cmd = [command, *command_args]
 
     stdin_fd = sys.stdin.fileno()
     stdout_fd = sys.stdout.fileno()
@@ -98,7 +160,7 @@ def main() -> int:
     status = 1
 
     copy_winsize(stdin_fd, master_fd)
-    set_title(project, state)
+    set_title(project, agent_name, state)
 
     def on_winch(_signum, _frame):
         copy_winsize(stdin_fd, master_fd)
@@ -118,7 +180,7 @@ def main() -> int:
             if not child_exited and state != "approval" and now - last_output > 1.4:
                 if state != "waiting":
                     state = "waiting"
-                    set_title(project, state)
+                    set_title(project, agent_name, state)
 
             watched = [master_fd]
             if not child_exited:
@@ -139,17 +201,17 @@ def main() -> int:
                     normalized = normalize(data)
                     if normalized:
                         window = (window + " " + normalized)[-4000:]
-                        needs_approval = any(hint in window for hint in APPROVAL_HINTS) and any(
+                        needs_approval = any(hint in window for hint in approval_hints) and any(
                             token in window for token in INTERACTION_HINTS
                         )
                         if needs_approval:
                             if state != "approval":
                                 state = "approval"
-                                set_title(project, state)
+                                set_title(project, agent_name, state)
                         elif state != "approval":
                             if state != "working":
                                 state = "working"
-                                set_title(project, state)
+                                set_title(project, agent_name, state)
                 elif child_exited:
                     break
 
@@ -163,7 +225,7 @@ def main() -> int:
                     os.write(master_fd, incoming)
                     if state == "approval":
                         state = "working"
-                        set_title(project, state)
+                        set_title(project, agent_name, state)
                 else:
                     break
 
@@ -178,7 +240,7 @@ def main() -> int:
                     status = exit_code_from_wait_status(waited_status)
                     if state != "waiting":
                         state = "waiting"
-                        set_title(project, state)
+                        set_title(project, agent_name, state)
     finally:
         termios.tcsetattr(stdin_fd, termios.TCSADRAIN, old_tty)
         try:

@@ -6,7 +6,8 @@ PROXY_SRC="$ROOT_DIR/scripts/codex_ghostty_title_proxy.py"
 SNIPPET_TEMPLATE="$ROOT_DIR/zsh/codex-ghostty-status.zsh.template"
 
 TARGET_DIR="${HOME}/.local/bin"
-PROXY_TARGET="$TARGET_DIR/codex-ghostty-title-proxy"
+PROXY_TARGET="$TARGET_DIR/agent-ghostty-title-proxy"
+LEGACY_PROXY_TARGET="$TARGET_DIR/codex-ghostty-title-proxy"
 SHELL_RC="${ZDOTDIR:-$HOME}/.zshrc"
 
 START_MARKER="# >>> codex-ghostty-status >>>"
@@ -24,6 +25,9 @@ fi
 
 mkdir -p "$TARGET_DIR"
 install -m 0755 "$PROXY_SRC" "$PROXY_TARGET"
+if [[ -f "$LEGACY_PROXY_TARGET" && "$LEGACY_PROXY_TARGET" != "$PROXY_TARGET" ]]; then
+  rm -f "$LEGACY_PROXY_TARGET"
+fi
 
 mkdir -p "$(dirname "$SHELL_RC")"
 touch "$SHELL_RC"
@@ -53,5 +57,6 @@ mv "$tmp_rc" "$SHELL_RC"
 echo "Installed!"
 echo "- Proxy: $PROXY_TARGET"
 echo "- Shell rc updated: $SHELL_RC"
+echo "- Wrapped commands: codex, claude, opencode"
 echo ""
 echo "Next: run 'source $SHELL_RC' or open a new Ghostty tab/window."

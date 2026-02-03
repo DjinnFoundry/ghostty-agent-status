@@ -1,27 +1,33 @@
 # codex-ghostty-status
 
-Tiny `zsh` wrapper for `codex` that updates your Ghostty tab/header title with project + status.
+Tiny `zsh` wrappers for AI coding CLIs that update your Ghostty tab/header title with project + status.
 
 Title format:
 
-`<project> - codex - <status>`
+`<project> - <agent> - <status>`
+
+Supported agents:
+
+- `codex`
+- `claude` (shown as `claude-code` in title)
+- `opencode`
 
 Status states:
 
-- `🟢 done` (Codex is waiting for your input)
-- `🟡 working` (Codex is actively running)
-- `🔴 approval` (Codex appears to be asking for confirmation)
+- `🟢 done` (agent is waiting for your input)
+- `🟡 working` (agent is actively running)
+- `🔴 approval` (agent appears to be asking for confirmation)
 
 ## Why
 
-When you have many Ghostty tabs, seeing only `codex` is low-context. This keeps the tab title meaningful by showing the current project and Codex state.
+When you have many Ghostty tabs, seeing only the command name is low-context. This keeps the tab title meaningful by showing current project and state.
 
 ## Requirements
 
 - macOS/Linux
 - `zsh`
 - [Ghostty](https://ghostty.org)
-- `codex` CLI in `PATH`
+- at least one of: `codex`, `claude`, `opencode` in `PATH`
 - `python3`
 
 ## Install (easy)
@@ -33,7 +39,7 @@ cd codex-ghostty-status
 source ~/.zshrc
 ```
 
-Open a new Ghostty tab/window (or run `source ~/.zshrc`) and run `codex`.
+Open a new Ghostty tab/window (or run `source ~/.zshrc`) and run any supported agent command.
 
 ## Publish to GitHub (maintainer)
 
@@ -57,9 +63,9 @@ cd codex-ghostty-status
 
 ## How it works
 
-- Installs a proxy script at `~/.local/bin/codex-ghostty-title-proxy`
-- Injects a small `codex()` function into your `~/.zshrc`
-- Runs Codex inside a PTY and emits OSC title updates (`OSC 2`) for Ghostty
+- Installs a proxy script at `~/.local/bin/agent-ghostty-title-proxy`
+- Injects wrappers for `codex`, `claude`, and `opencode` into `~/.zshrc`
+- Runs the selected agent inside a PTY and emits OSC title updates (`OSC 2`) for Ghostty
 
 ## Notes
 

@@ -1,8 +1,16 @@
 # >>> codex-ghostty-status >>>
-# Codex wrapper: updates Ghostty tab/header title with status emoji.
-codex() {
+# Multi-agent wrappers: codex, claude-code (claude), and opencode.
+_cgs_wrap_agent() {
+  local agent_cmd="$1"
+  local agent_title="$1"
+  shift
+
+  if [[ "$agent_title" == "claude" || "$agent_title" == "claude-code" ]]; then
+    agent_title="claude-code"
+  fi
+
   if [[ ! -t 0 || ! -t 1 ]]; then
-    command codex "$@"
+    command "$agent_cmd" "$@"
     return $?
   fi
 
@@ -10,13 +18,33 @@ codex() {
   project="${PWD:t}"
   [[ -z "$project" ]] && project="/"
 
-  if ! command -v python3 >/dev/null 2>&1 || [[ ! -f "__PROXY_PATH__" ]]; then
-    print -rn -- "\e]2;${project} - codex - 🟡 working\a"
-    command codex "$@"
+  if ! command -v "$agent_cmd" >/dev/null 2>&1; then
+    command "$agent_cmd" "$@"
     return $?
   fi
 
-  python3 "__PROXY_PATH__" "$project" "$@"
+  if ! command -v python3 >/dev/null 2>&1 || [[ ! -f "__PROXY_PATH__" ]]; then
+    print -rn -- "\e]2;${project} - ${agent_title} - 🟡 working\a"
+    command "$agent_cmd" "$@"
+    return $?
+  fi
+
+  python3 "__PROXY_PATH__" "$project" "$agent_cmd" "$@"
+  return $?
+}
+
+codex() {
+  _cgs_wrap_agent "codex" "$@"
+  return $?
+}
+
+claude() {
+  _cgs_wrap_agent "claude" "$@"
+  return $?
+}
+
+opencode() {
+  _cgs_wrap_agent "opencode" "$@"
   return $?
 }
 # <<< codex-ghostty-status <<<

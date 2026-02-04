@@ -37,6 +37,15 @@ AGENT_APPROVAL_HINTS = {
         "acceptforsession",
     ),
     "claude": (
+        # Permission prompts
+        "do you want to proceed",
+        "yes, and don't ask again",
+        "tell claude what to do",
+        "bash command",
+        "edit file",
+        "write to file",
+        "allow tool",
+        # Older/alternative prompts
         "permission mode",
         "bypass permissions",
         "allow dangerously skip permissions",
@@ -45,6 +54,15 @@ AGENT_APPROVAL_HINTS = {
         "trust this directory",
     ),
     "claude-code": (
+        # Permission prompts
+        "do you want to proceed",
+        "yes, and don't ask again",
+        "tell claude what to do",
+        "bash command",
+        "edit file",
+        "write to file",
+        "allow tool",
+        # Older/alternative prompts
         "permission mode",
         "bypass permissions",
         "allow dangerously skip permissions",
@@ -78,7 +96,27 @@ INTERACTION_HINTS = (
 
 CSI_RE = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]")
 OSC_RE = re.compile(r"\x1b\][^\x07]*(?:\x07|\x1b\\)")
+OSC_TITLE_RE = re.compile(rb"\x1b\]2;[^\x07]*(?:\x07|\x1b\\)")
 CTRL_RE = re.compile(r"[\x00-\x08\x0b-\x1f\x7f]+")
+
+# Keys that indicate user is responding to a prompt (not just typing)
+RESPONSE_KEYS = (
+    b"\r",      # Enter
+    b"\n",      # Newline
+    b"y",       # Yes
+    b"Y",
+    b"n",       # No
+    b"N",
+    b"1",       # Numbered options
+    b"2",
+    b"3",
+    b"4",
+)
+
+
+def strip_osc_title(data: bytes) -> bytes:
+    """Remove OSC 2 (set title) sequences from output to prevent agent from overwriting our title."""
+    return OSC_TITLE_RE.sub(b"", data)
 
 
 def title_agent_name(cmd: str) -> str:
@@ -156,6 +194,7 @@ def main() -> int:
     state = "working"
     window = ""
     last_output = time.monotonic()
+    last_title_refresh = time.monotonic()
     child_exited = False
     status = 1
 
@@ -181,6 +220,12 @@ def main() -> int:
                 if state != "waiting":
                     state = "waiting"
                     set_title(project, agent_name, state)
+                    last_title_refresh = now
+
+            # Refresh title periodically to recover from agent overwrites
+            if now - last_title_refresh > 2.0:
+                set_title(project, agent_name, state)
+                last_title_refresh = now
 
             watched = [master_fd]
             if not child_exited:
@@ -195,7 +240,9 @@ def main() -> int:
                     data = b""
 
                 if data:
-                    os.write(stdout_fd, data)
+                    # Strip OSC title sequences to prevent agent from overwriting our title
+                    filtered_data = strip_osc_title(data)
+                    os.write(stdout_fd, filtered_data)
                     last_output = time.monotonic()
 
                     normalized = normalize(data)
@@ -208,10 +255,12 @@ def main() -> int:
                             if state != "approval":
                                 state = "approval"
                                 set_title(project, agent_name, state)
+                                last_title_refresh = time.monotonic()
                         elif state != "approval":
                             if state != "working":
                                 state = "working"
                                 set_title(project, agent_name, state)
+                                last_title_refresh = time.monotonic()
                 elif child_exited:
                     break
 
@@ -223,9 +272,13 @@ def main() -> int:
 
                 if incoming:
                     os.write(master_fd, incoming)
-                    if state == "approval":
+                    # Only transition from approval to working when user sends a response key
+                    # (not just any keystroke while typing a new prompt)
+                    if state == "approval" and any(key in incoming for key in RESPONSE_KEYS):
                         state = "working"
+                        window = ""  # Clear window to reset approval detection
                         set_title(project, agent_name, state)
+                        last_title_refresh = time.monotonic()
                 else:
                     break
 
@@ -241,6 +294,7 @@ def main() -> int:
                     if state != "waiting":
                         state = "waiting"
                         set_title(project, agent_name, state)
+                        last_title_refresh = time.monotonic()
     finally:
         termios.tcsetattr(stdin_fd, termios.TCSADRAIN, old_tty)
         try:
